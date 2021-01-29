@@ -1,0 +1,41 @@
+# History files
+.Rhistory
+.Rapp.history
+
+# Example code in package build process
+*-Ex.R
+
+# RStudio files
+.Rproj.user/
+
+# produced vignettes
+vignettes/*.html
+vignettes/*.pdf
+
+# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
+.httr-oauth
+.Rproj.user
+
+# Ignore data
+/data/prism_data/*
+/data/processed_rasters/*
+/data/raster_files/*
+/data/shape_files/*
+/data/worldclim_data/*
+
+#
+figures/*
+documents/*
+pictures/*
+presentations/*
+wc0.5/*
+manuscript/*_cache
+manuscript/*_files
+
+
+summary_2019_cache/latex/*
+
+*cache/
+
+# Ignore word documents
+*.docx

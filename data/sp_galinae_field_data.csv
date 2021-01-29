@@ -1,0 +1,62 @@
+﻿Treatment,Rep,Oviposition Date,Eggs to 25oC,Eggs to 30oC,Wasp ID,Larva:Wasp Ratio,Exposure Dates,Date Deployed in Field,unemerged_larvae,unemerged_partial_develop_adults,unemerged_females,unemerged_males,Date of First Emergence,Date of Final Emergence,emerged_females,emerged_males
+DE_Outdoor,1,10/11-10/14/19,10/14/2019,10/16/2019,Spat-RU-2010F50 + Spat-RU-2010F53 (USED 1X),2:01,11/14-11/21/19,12/16/2019,4,0,0,,5/25/2020,6/4/2020,4,3
+DE_Outdoor,2,10/11-10/14/19,10/14/2019,10/16/2019,Spat-RU-2010F50 + Spat-RU-2010F53 (USED 1X),2:01,11/14-11/21/19,12/16/2019,2,0,0,,5/28/2020,6/1/2020,3,3
+DE_Outdoor,3,10/11-10/14/19,10/14/2019,10/16/2019,Spat-RU-2010F50 + Spat-RU-2010F53 (USED 1X),2:01,11/14-11/21/19,12/16/2019,3,0,0,,5/27/2020,6/1/2020,1,1
+DE_Outdoor,4,10/11-10/14/19,10/14/2019,10/16/2019,Spat-RU-2010F50 + Spat-RU-2010F53 (USED 1X),2:01,11/14-11/21/19,12/16/2019,3,0,0,,6/5/2020,6/15/2020,12,4
+DE_Outdoor,5,10/11-10/14/19,10/14/2019,10/16/2019,Spat-RU-2010F50 + Spat-RU-2010F53 (USED 1X),2:01,11/14-11/21/19,12/16/2019,3,0,0,,NA,NA,0,0
+DE_Outdoor,6,10/11-10/14/19,10/14/2019,10/16/2019,Spat-RU-2010F50 + Spat-RU-2010F53 (USED 1X),2:01,11/14-11/21/19,12/16/2019,3,0,0,,NA,NA,0,0
+Morris_Air,1,,,,,,,,11,0,0,0,NA,NA,0,0
+Morris_Air,2,,,,,,,,12,0,0,0,NA,NA,0,0
+Morris_Air,3,,,,,,,,1,1,0,0,NA,NA,0,0
+Morris_Air,4,,,,,,,,4,6,0,0,NA,NA,0,0
+Morris_Air,5,,,,,,,,11,7,0,1,NA,NA,0,0
+Morris_Air,6,,,,,,,,9,1,0,0,NA,NA,0,0
+Morris_Snow,1,,,,,,,,0,0,10,1,4/20/2020,4/20/2020,1,0
+Morris_Snow,2,,,,,,,,0,0,15,4,NA,NA,0,0
+Morris_Snow,3,,,,,,,,0,0,10,5,4/22/2020,5/1/2020,10,6
+Morris_Snow,4,,,,,,,,1,0,0,0,4/22/2020,4/29/2020,27,20
+Morris_Snow,5,,,,,,,,0,0,8,6,NA,NA,0,0
+Morris_Snow,6,,,,,,,,0,0,6,3,4/20/2020,4/24/2020,28,20
+UMN_Air,1,,,,,,,,0,0,0,0,4/10/2020,4/13/2020,4,1
+UMN_Air,2,,,,,,,,2,0,0,0,4/17/2020,4/27/2020,3,1
+UMN_Air,3,,,,,,,,0,0,4,2,NA,NA,0,0
+UMN_Air,4,,,,,,,,0,0,0,0,NA,NA,0,0
+UMN_Air,5,,,,,,,,4,0,0,0,NA,NA,0,0
+UMN_Air,6,,,,,,,,0,0,0,0,NA,NA,0,0
+UMN_Air,7,,,,,,,,0,3,0,0,NA,NA,0,0
+UMN_Snow,1,,,,,,,,15,0,0,0,NA,NA,0,0
+UMN_Snow,2,,,,,,,,2,1,11,3,NA,NA,0,0
+UMN_Snow,3,,,,,,,,2,0,0,0,4/10/2020,4/15/2020,6,1
+UMN_Snow,4,,,,,,,,2,0,0,0,NA,NA,0,0
+UMN_Snow,5,,,,,,,,3,0,0,0,NA,NA,0,0
+UMN_Snow,6,,,,,,,,4,0,0,2,NA,NA,0,0
+UMN_Snow,7,,,,,,,,10,0,0,0,NA,NA,0,0
+UMN_Snow,8,,,,,,,,5,0,0,0,NA,NA,0,0
+Waseca_Air,1,,,,,,,,5,0,0,0,NA,NA,0,0
+Waseca_Air,2,,,,,,,,5,0,0,0,NA,NA,0,0
+Waseca_Air,3,,,,,,,,1,1,0,0,NA,NA,0,0
+Waseca_Air,4,,,,,,,,8,0,0,0,NA,NA,0,0
+Waseca_Air,5,,,,,,,,1,0,0,0,NA,NA,0,0
+Waseca_Air,6,,,,,,,,4,0,0,0,NA,NA,0,0
+Waseca_Air,7,,,,,,,,3,0,0,0,NA,NA,0,0
+Waseca_Air,8,,,,,,,,2,0,0,0,NA,NA,0,0
+Waseca_Air,9,,,,,,,,12,0,0,0,NA,NA,0,0
+Waseca_Snow,1,,,,,,,,1,1,2,1,4/17/2020,4/17/2020,1,1
+Waseca_Snow,2,,,,,,,,4,0,0,0,NA,NA,0,0
+Waseca_Snow,3,,,,,,,,3,4,0,0,4/20/2020,4/22/2020,6,1
+Waseca_Snow,4,,,,,,,,1,0,0,0,NA,NA,0,0
+Waseca_Snow,5,,,,,,,,2,0,0,0,NA,NA,0,0
+Waseca_Snow,6,,,,,,,,0,0,0,0,NA,NA,0,0
+Waseca_Snow,7,,,,,,,,0,0,0,0,NA,NA,0,0
+Waseca_Snow,8,,,,,,,,0,0,3,2,NA,NA,0,0
+Waseca_Snow,9,,,,,,,,1,2,2,1,NA,NA,0,0
+Shipping_Control,1,,,,,,,,0,0,4,0,2/11/2020,2/18/2020,4,3
+Shipping_Control,2,,,,,,,,0,0,4,2,2/11/2020,2/13/2020,9,4
+Shipping_Control,3,,,,,,,,0,0,1,0,2/17/2020,2/26/2020,14,6
+Shipping_Control,4,,,,,,,,1,0,8,2,2/17/2020,2/24/2020,22,15
+Shipping_Control,5,,,,,,,,1,0,6,2,2/11/2020,2/24/2020,34,25
+Shipping_Control,6,,,,,,,,0,0,4,0,2/11/2020,3/2/2020,10,8
+Shipping_Control,7,,,,,,,,0,0,4,6,2/17/2020,2/17/2020,3,3
+Shipping_Control,8,,,,,,,,0,0,12,3,NA,NA,0,0
+Shipping_Control,9,,,,,,,,1,0,6,1,NA,NA,0,0
+Shipping_Control,10,,,,,,,,2,0,8,1,2/17/2020,3/10/2020,11,6

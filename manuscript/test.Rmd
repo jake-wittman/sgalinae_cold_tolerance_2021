@@ -1,0 +1,54 @@
+---
+title: ""
+output: 
+   officedown::rdocx_document:
+      reference_docx: "template.docx"
+      number_sections: false
+bibliography: references.bib
+csl: "environmental_entomology.csl"
+link-citations: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+   echo = FALSE,
+   include = FALSE,
+   message = FALSE,
+   warning = FALSE,
+   fig.width = 6.7,
+ tab.cap.style = "Table Caption",
+  tab.cap.pre = "Table ",
+  tab.cap.sep = ": "
+)
+# Try setting csl: "environmental_entomology.csl" in YAML
+set.seed(314)
+library(tidyverse)
+library(flextable)
+library(rsample)
+library(egg)
+library(officedown)
+library(patchwork)
+library(emmeans)
+library(broom)
+library(ggeffects)
+library(merTools)
+library(ggmap)
+library(maps)
+library(rgdal)
+library(viridis)
+library(sp)
+library(spatial)
+library(officer)
+library(sf)
+library(raster)
+library(ggtext)
+options(digits = 3)
+conflicted::conflict_prefer("select", "dplyr")
+conflicted::conflict_prefer("filter", "dplyr")
+conflicted::conflict_prefer("rotate", "flextable")
+conflicted::conflict_prefer("font", "flextable")
+
+title_paragraph <- fp_par(text.align = "left")
+```
+
+`r formatC(signif(47.896, digits=4), digits=4,format="fg", flag="#")` Testing

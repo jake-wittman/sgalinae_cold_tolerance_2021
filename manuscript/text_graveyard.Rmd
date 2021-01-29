@@ -1,0 +1,734 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+
+```{r}
+
+# Old models and model diagnostics
+# Check residuals
+library(DHARMa)
+#ok
+field_eclose_mintemp_resids <- simulateResiduals(mintemp_eclose_model, n = 1000, use.u = T)
+plot(field_eclose_mintemp_resids)
+
+# not ok
+plot(simulateResiduals(mintemp_emerge_model))
+
+# neither okay
+plot(simulateResiduals(meanRH_eclose_model))
+plot(simulateResiduals(meanRH_emerge_model))
+
+#ok
+plot(simulateResiduals(var_mintemp_eclose))
+# not okay
+plot(simulateResiduals(var_mintemp_emerge))
+
+# Looks okay
+plot(simulateResiduals(treatment2_eclose_model))
+# Not okay
+plot(simulateResiduals(treatment2_emerge_model))
+treatment2_eclose_model <- glmer(cbind(total_adults, unemerged_larvae) ~ treatment2 +
+                          (1 | log_uid / brood_uid),
+              data = aod_overwinter_dat,
+              family = binomial)
+
+treatment2_eclose_anova <- car::Anova(treatment2_eclose_model)
+
+# Variation models
+# No change in conclusion, but coefficient changes A LOT.
+var_mintemp_eclose <- glmer(cbind(total_adults, unemerged_larvae) ~ var_min_temp +
+                          (1 | log_uid / brood_uid),
+              data = overwinter_dat_node,
+              family = binomial)
+
+# Variation in min temp becomes significant with  Abbott correction
+var_mintemp_emerge <- glmer(cbind(number_emg_sg, total_unemerged) ~ var_min_temp +
+                          (1 | log_uid / brood_uid),
+              data = overwinter_dat_node,
+              family = binomial)
+
+
+tidy_varmintemp_eclose <-
+   tidy(
+      var_mintemp_eclose,
+      conf.int = TRUE,
+      conf.method = "Wald",
+      exponentiate = "TRUE"
+   )
+
+tidy_varmintemp_emerge <-
+   tidy(var_mintemp_emerge,
+        conf.int = TRUE,
+        conf.method = "Wald",
+        exponentiate = "TRUE")
+
+tidy_RH_eclose <-
+   tidy(meanRH_eclose_model,
+        conf.int = TRUE,
+        conf.method = "Wald",
+        exponentiate = "TRUE")
+
+tidy_RH_emerge <-
+   tidy(meanRH_emerge_model,
+        conf.int = TRUE,
+        conf.method = "Wald",
+        exponentiate = "TRUE")
+
+anova(var_mintemp_eclose, mintemp_eclose_model, meanRH_eclose_model)
+anova(var_mintemp_emerge, mintemp_emerge_model, meanRH_emerge_model)
+
+
+#########################
+# GLMM - not used any more (I think)
+# Glmmer
+mintemp_eclose_model <- glmer(cbind(total_adults, unemerged_larvae) ~ min_temp +
+                          (1 | log_uid / brood_uid),
+              data = overwinter_dat_node,
+              family = binomial)
+
+
+lsm_mintemp_eclose <- emmeans::emmeans(mintemp_eclose_model, 
+                 "min_temp",
+                 type = "response",
+                 at = list(min_temp = sort(unique(overwinter_dat_node$min_temp)),
+                           brood_uid = unique(overwinter_dat_node$brood_uid)))
+
+
+# Mean RH becomes significant
+meanRH_eclose_model <- glmer(cbind(total_adults, unemerged_larvae) ~ mean_RH +
+                          (1 | site / log_uid / brood_uid),
+              data = overwinter_dat_node,
+              family = binomial)
+
+# No change
+mintemp_emerge_model <- glmer(cbind(number_emg_sg, total_unemerged) ~ min_temp +
+                          (1 | log_uid / brood_uid),
+              data = overwinter_dat_node,
+              family = binomial)
+
+lsm_mintemp_emerge <- emmeans::emmeans(mintemp_emerge_model, 
+                 "min_temp",
+                 type = "response",
+                 at = list(min_temp = sort(unique(overwinter_dat_node$min_temp))))
+
+
+
+# RH becomes significant with Abbott correction
+meanRH_emerge_model <- glmer(cbind(number_emg_sg, total_unemerged) ~ mean_RH +
+                          (1 | log_uid / brood_uid),
+              data = overwinter_dat_node,
+              family = binomial)
+
+
+
+tidy_mintemp_eclose <-
+   tidy(
+      mintemp_eclose_model,
+      conf.int = TRUE,
+      conf.method = "Wald",
+      exponentiate = "TRUE"
+   )
+tidy_mintemp_emerge <-
+   tidy(
+      mintemp_emerge_model,
+      conf.int = TRUE,
+      conf.method = "Wald",
+      exponentiate = "TRUE"
+   )
+
+
+# Fitted line predictions - old elcosion plots
+pred_df <- expand(data = overwinter_dat_node,
+                  crossing(brood_uid, seq_range(min_temp, n = 100))) %>% 
+   rename(min_temp = 'seq_range(min_temp, n = 100)') %>% 
+   left_join(., overwinter_dat_narm, by = "brood_uid") %>% 
+   rename(min_temp = min_temp.x)
+pred_df <- add_ci(pred_df,
+                  mintemp_eclose_model,
+                  alpha = 0.05,
+                  includeRanef = FALSE,
+                  type = "boot",
+                  nSims = 50)
+
+lsm_mintemp_eclose <- as_tibble(lsm_mintemp_eclose)
+
+ls_means <- predictInterval(merMod = mintemp_eclose_model,
+                        newdata = overwinter_dat_node,
+                        level = 0.95, 
+                        n.sims = 100,
+                        stat = "median",
+                        type = "probability",
+                        include.resid.var = TRUE)
+ls_means_df <- bind_cols(overwinter_dat_node, ls_means)
+ls_means_df <- ls_means_df %>% 
+   mutate(min_temp = floor(min_temp),
+          min_temp = case_when(min_temp == -14 ~ -13,
+                               TRUE ~ min_temp)) %>%
+   group_by(min_temp) %>% 
+   select(fit, upr, lwr, prop_eclose, min_temp) %>% 
+   summarise(fit_prop_eclose = mean(fit),
+             n = n()) %>% 
+   mutate(se_fit_prop = sqrt((fit_prop_eclose * (1 - fit_prop_eclose))) / n)
+# Predict specific proportions
+
+ggplot() +
+   #stat_lineribbon(data = pred_df, aes(x = min_temp, y = pred), .width = 0.95) +
+   geom_line(data = pred_df, aes(x = min_temp, y = pred)) + # fit line
+   geom_ribbon(data = pred_df, aes(x = min_temp, ymin = LCB0.025, ymax = UCB0.975), alpha = 0.1) + 
+   geom_jitter(data = overwinter_dat_node, # individual points
+               aes(x = min_temp, y = prop_success),
+               shape = 1,
+               alpha = 0.5,
+               size = 1,
+               width = 0.5,
+               height = 0.02) +
+   labs(x = "Temperature (°C)", y = "Proportion completing development \n") +
+   theme(axis.title = element_text(size = 12),
+         axis.text = element_text(size = 12)) +
+     scale_x_reverse(limits = c(-12, -32)) +
+   geom_point(data = ls_means_df, aes(x = min_temp, y = fit_prop_eclose)) +
+   geom_errorbar(data = ls_means_df,
+                 aes(x = min_temp,
+                     ymin = fit_prop_eclose - 1.96 * se_fit_prop,
+                     ymax = fit_prop_eclose + 1.96 * se_fit_prop),
+                 width = 0.5)# +
+
+
+f_emerge_text <- substitute(logit(italic(y)) == a + b*italic(x),
+                            list(a = round(tidy_mintemp_emerge$estimate[1], digits = 2),
+                                 b = round(tidy_mintemp_emerge$estimate[2], digits = 2)))
+f_emerge_text <- data.frame(
+   label = as.character(as.expression(f_emerge_text))
+)
+
+pred_df <- data.frame(min_temp = seq(-5, -30, length.out = 100),
+                                                      brood_uid = rep(0, length.out = 100),
+                                                      log_uid = rep(0, length.out = 100),
+                                                      site = rep(0, length.out = 100))
+pred_df <- add_ci(pred_df,
+                  mintemp_emerge_model,
+                  alpha = 0.05,
+                  includeRanef = FALSE,
+                  type = "boot",
+                  nSims = 50)
+
+
+
+ggplot() +
+   geom_line(data = pred_df, aes(x = min_temp, y = pred)) +
+   geom_ribbon(data = pred_df,
+               aes(x = min_temp, ymin = LCB0.025, ymax = UCB0.975),
+               alpha = 0.1) +
+   geom_jitter(data = overwinter_dat_narm,
+               aes(x = min_temp, y = prop_emerge),
+               color = "black",
+               alpha = 0.7,
+               size = 1,
+               shape = 1,
+               width = 0.5,
+               height = 0.02) +
+   geom_point(data = ls_means_df, aes(x = min_temp, y = fit_prop_eclose)) +
+   geom_errorbar(data = ls_means_df, 
+                 aes(x = min_temp,
+                     ymin = fit_prop_eclose - 1.96 * se_fit_prop,
+                     ymax = fit_prop_eclose + 1.96 * se_fit_prop),
+                 width = 0.5) + 
+   geom_text(data = f_emerge_text,
+             aes(x = -20, y = 0.69, label = label),
+             size = 4.5,
+             inherit.aes = FALSE,
+             parse = TRUE) +
+   scale_x_reverse() +
+   labs(x = "Temperature (°C)", y = "Proportion of insects emerging \n") +
+   theme(axis.title = element_text(size = 12),
+         axis.text = element_text(size = 12)) 
+
+
+# old map predictions 
+preds_2013_2014 <- predictInterval(mintemp_eclose_model,
+                 newdata = winter_2013_2014,
+                 which = "fixed",
+                 n.sims = 300,
+                 .parallel = TRUE,
+                 type = "probability")
+
+preds_2017_2018 <- predictInterval(mintemp_eclose_model,
+                 newdata = winter_2017_2018,
+                 n.sims = 300,
+                 which = "fixed",
+                 .parallel = TRUE,
+                 type = "probability")
+```
+
+# Trying to plot BLUPS
+re_pred <- expand(data = overwinter_dat_node,
+                  crossing(brood_uid, seq(0, n = 50))) %>% 
+   rename(min_temp = 'seq_range(min_temp, n = 50)') %>% 
+   left_join(., overwinter_dat_node, by = "brood_uid") %>% 
+   rename(min_temp = min_temp.x)
+
+re_pred <- add_ci(re_pred,
+                  mintemp_eclose_model,
+                  alpha = 0.05,
+                  includeRanef = TRUE,
+                  type = "boot",
+                  nSims = 50)
+
+
+
+ls_means <- add_ci(overwinter_dat_node,
+                   mintemp_eclose_model,
+                   alpha = 0.05,
+                   includeRanef = TRUE,
+                   type = "boot",
+                   nSims = 50)
+
+
+# Predict specific proportions
+
+ggplot() +
+   geom_line(data = re_pred, aes(x = min_temp, y = pred, group = brood_uid),
+             alpha = 0.1) + # re_lines
+   geom_line(data = pred_df, aes(x = min_temp, y = pred), colour = "blue", size = 1.2) +
+   labs(x = "Temperature (°C)", y = "Proportion completing development \n") +
+   theme(axis.title = element_text(size = 12),
+         axis.text = element_text(size = 12)) +
+   scale_x_reverse(limits = c(-12, -32)) +
+   geom_jitter(data = ls_means, aes(x = min_temp, y = pred)) #+
+   geom_errorbar(data = ls_means,
+                 aes(x = min_temp,
+                     ymin = fit_prop_eclose - 1.96 * se_fit_prop,
+                     ymax = fit_prop_eclose + 1.96 * se_fit_prop),
+                 width = 0.5) +
+   geom_jitter(data = overwinter_dat_node, # individual points
+               aes(x = min_temp, y = prop_success),
+               shape = 1,
+               alpha = 0.5,
+               size = 1,
+               width = 0.5,
+               height = 0.02) +
+   annotate(
+      "text",
+      x = -14, y = 0.70,
+      label = as.character(expression(paste("logit(y) = 1.1x10"^"12", " + 3.66x"), parse = TRUE)),
+      parse = T,
+      size = 4.5,
+      inherit.aes = FALSE
+   )
+# Plot without random effects
+ggplot(overwinter_dat_node, aes(x = min_temp, y = prop_eclose, weight = total_insects)) +
+   geom_jitter(aes(x = min_temp, y = prop_eclose)) +
+   geom_smooth(method = "glm",
+               method.args = list(family = "binomial")) +
+   geom_point(data = ls_means_df, aes(x = min_temp, y = fit_prop_eclose), inherit.aes = FALSE) +
+   geom_errorbar(data = ls_means_df,
+                 aes(x = min_temp,
+                     ymin = fit_prop_eclose - 1.96 * se_fit_prop,
+                     ymax = fit_prop_eclose + 1.96 * se_fit_prop),
+                 width = 0.5,
+                 inherit.aes = FALSE) +
+   scale_x_reverse()
+   
+   
+# Estimate the emergence model Bayesain (or with just mcmc cause I like their plotting tools better)
+library(brms)
+library(tidybayes)
+library(modelr)
+
+test <- overwinter_dat_narm %>% 
+   mutate(site = as.factor(site),
+           brood_uid = as.factor(brood_uid),
+           log_uid = as.factor(log_uid)) %>% 
+   mutate(site = as.factor(as.numeric(site)),
+          brood_uid = as.factor(as.numeric(site)),
+          log_uid = as.factor(as.numeric(site)))
+
+b_eclose_field <- brm(total_adults | trials(total_insects) ~ min_temp +
+                         (1 | site / log_uid / brood_uid),
+                      data = overwinter_dat_narm,
+                      family = "binomial",
+                      chains = 3,
+                      threads = 3,
+                      cores = 3,
+                      iter = 5000,
+                      backend = "cmdstanr",
+                      refresh = 1000,
+                      control = list(adapt_delta = 0.97),
+                      prior = c(prior(normal(1, 1), class = "b"),
+                                prior(normal(0, 25), class = "sd"),
+                                prior(normal(0, 10), class = "Intercept")))
+
+overwinter_dat_narm %>% 
+   add_predicted_draws(b_eclose_field, n = 100, scale = "response") %>% 
+   mutate(pred_eclose = .prediction / total_insects) %>% 
+   ggplot()+
+   stat_pointinterval(aes(x = min_temp, y = pred_eclose), .width = c(0.25, 0.)) +
+   geom_point(data = overwinter_dat_narm,
+              aes(x = min_temp, y = prop_eclose),
+              colour = "red",
+              inherit.aes = FALSE) 
+
+overwinter_dat_narm %>% 
+   add_fitted_draws(b_eclose_field, n = 100, scale = "response") %>% 
+   mutate(pred_eclose = .value / total_insects) %>% View() 
+   ggplot()+
+   stat_lineribbon(aes(x = min_temp, y = pred_eclose, group = brood_uid)) +
+   geom_point(data = overwinter_dat_narm,
+              aes(x = min_temp, y = prop_eclose),
+              colour = "red",
+              inherit.aes = FALSE)
+   
+   
+new_dat <- expand(data = overwinter_dat_narm,
+                  crossing(brood_uid, seq_range(min_temp, n = 30))) %>% 
+   rename(min_temp = 'seq_range(min_temp, n = 30)') %>% 
+   left_join(., overwinter_dat_narm, by = "brood_uid") %>% 
+   rename(min_temp = min_temp.x)
+
+fe_only <- new_dat %>% 
+   add_fitted_draws(model = b_eclose_field,
+                    newdata = .,
+                    re_formula = NA,
+                    scale = "response", n = 200) %>% 
+   mutate(pred_eclose = .value / total_insects)
+
+fe_only_mean <- fe_only %>% 
+   group_by(min_temp) %>% 
+   summarize(pred_eclose = mean(pred_eclose))
+
+ggplot(fe_only,
+       aes(x = min_temp, y = pred_eclose, group = .draw)) +
+   geom_line(alpha = 0.2) +
+   scale_x_reverse()
+
+ggplot(fe_only, aes(x = min_temp, y = pred_eclose)) +
+   stat_lineribbon(aes(), .width = c(0.95)) +
+   scale_x_reverse()
+
+re <- new_dat %>% 
+   add_fitted_draws(model = b_eclose_field,
+                    newdata = .,
+                    scale = "response", n = 100) %>% 
+   mutate(pred_eclose = .value / total_insects)
+
+ggplot(re, aes(x = min_temp, y = pred_eclose)) +
+   stat_lineribbon(.width = c(0)) +
+   #geom_line(data = fe_only, alpha = 0.2, aes(group = .draw)) +
+   stat_lineribbon(aes(group = brood_uid), alpha = 0.2, size = 0.5, .width = c(0.00001)) +
+   scale_x_reverse() +
+   theme(legend.position = "none")
+
+
+The three models used to produce geographic forecasts of *S. galinae* survival forecast different proportions of survival across the northern range of *Fraxinus*. These differences are, in part, because cold hardiness is not just limited to how well an insect survives exposure to low temperatures, but also how the insect responds to variation in temperatures throughout the winter and the length of low temperature exposure [@marshall2014; @terblanche2011]. Because our laboratory assays exposed *S. galinae* larvae to cold temperatures for just a few minutes to hours, it is possible our survival estimates from these assays are too liberal. Or put another way, the models produced from the laboratory assays encompass only mortality from acute cold exposure, and do not account for length of exposure, variation in temperature, or other factors that may impact survival. 
+
+
+   mutate(Response = c(rep("Normally Colored", 2), rep("Eclosion", 2)),
+          Coefficient = c(rep(c("Intercept", "Slope"), times = 2)),
+          Estimate = case_when(estimate > 100 ~ paste0(formatC(estimate, format = "e", digits = 1),
+                                             " (",
+                                             formatC(conf.low, format = "e", digits = 1),
+                                             ", ",
+                                             formatC(conf.high, format = "e", digits = 1),
+                                             ")"),
+                               TRUE ~ paste0(round(estimate, 3),
+                                             " (",
+                                             round(conf.low, 3),
+                                             ", ",
+                                             round(conf.high, 3),
+                                             ")")),
+
+
+# Abbott correction with 0 as baseline and then modeled with SCP model looks GREAT! 
+# Let's calculate some quantities to quantify this though
+# Calculate log likelihood of each model
+# Add predictions from each model to overall data frame
+abbott_scp$pred_scp_mod <- predict(scp_logreg,
+                            type = "response",
+                            newdata = data.frame(est_scp = abbott_scp$temp_pulled))
+abbott_scp$pred_eclose_mod <- predict(a_lab_eclose,
+                                      type = "response")
+abbott_scp$resids_scp_mod <- abbott_scp$abbott0_eclose - abbott_scp$pred_scp_mod
+abbott_scp$resids_eclose_mod <- abbott_scp$abbott0_eclose - abbott_scp$pred_eclose_mod
+
+ggplot(abbott_scp, aes(x = pred_scp_mod, y = resids_scp_mod)) +
+   geom_jitter() +
+   scale_y_continuous(limits = c(-1, 1)) +
+
+ggplot(abbott_scp, aes(x = pred_eclose_mod, y = resids_eclose_mod)) +
+   geom_jitter() +
+   scale_y_continuous(limits = c(-1, 1))
+
+
+
+# Plot abbott corrected proportions and overlay the associated response model and scp model
+ggplot(abbott_scp, aes(x = temp_pulled, y = abbott0_normal_color)) +
+   geom_point() +
+   geom_errorbar(aes(x = temp_pulled,
+                     ymin = lwr_0_norm_color,
+                     ymax = upr_0_norm_color)) + 
+   geom_line(data = scp_preds_df, aes(x = est_scp, y = fit), colour = "blue") +
+      geom_ribbon(data = scp_preds_df,
+               aes(x = est_scp, ymin = lwr, ymax = upr),
+               alpha = 0.2,
+               fill = "blue",
+               colour = NA,
+               inherit.aes = FALSE) +
+   labs(x = "Minimum temp pulled C", y = "Proportion normally colored (Abbott corrected)") +
+   geom_line(data = a_discolor_df, aes(x = temp_pulled, y = fit), colour = "black") +
+   geom_ribbon(data = a_discolor_df,
+             aes(x = temp_pulled, ymin = lwr, ymax = upr), 
+             alpha = 0.4, fill = "grey",
+             inherit.aes = FALSE) +
+   scale_x_reverse() 
+   
+abbott_scp %>% 
+   pivot_longer(cols = c(prop_normal_color,
+                         prop_eclose,
+                         abbott_normal_color,
+                         abbott_eclose,
+                         abbott0_normal_color,
+                         abbott0_eclose),
+                names_to = "proportion_type",
+                values_to = "proportion") %>% 
+   ggplot(aes(x = temp_pulled, y = proportion)) +
+   geom_point() +
+   facet_wrap(~proportion_type)
+
+
+```{r llt-discolor-plot, fig.cap="Relationship between the probability that larvae of *Spathius galinae* (*n* = 427) would appear discolored three days after being cooled to a sub-zero temperature and the sub-zero temperature to which larvae were cooled. Open points indicate whether or not individual *S. galinae* were normal colored (1 = normal colored, 0 = discolored) and have been jittered to facilitate viewing. Solid black points are the overall proportion of *S. galinae* that were normally colored at a given temperature, while error bars are ± one standard error. The solid line is the fitted population model. The grey band represents the 95% confidence interval for the fitted line. Points have been jittered slightly.", include=TRUE}
+ggplot() +
+   geom_jitter(data = scp_llt_dat, 
+               aes(x = temp_pulled_grouped,
+                   y = discolor_3day),
+               width = 0.09,
+               height = 0.02,
+               colour = "black",
+               shape = 1,
+               alpha = 0.7) +
+   geom_point(data = scp_summary,
+              aes(x = temp_pulled_grouped, y = mean_discolor_3day),
+              size = 2) +
+   geom_errorbar(data = scp_summary,
+                 aes(x = temp_pulled_grouped, 
+                     ymin = mean_discolor_3day - se_discolor,
+                     ymax = mean_discolor_3day + se_discolor),
+                 width = 0.5) +
+   geom_line(data = pred_dat_discolor,
+             aes(x = x,
+                 y = predicted),
+             size = 1.05) +
+   geom_ribbon(data = pred_dat_discolor,
+               aes(x = x,
+                   ymin = conf.low,
+                   ymax = conf.high),
+               inherit.aes = FALSE,
+               alpha = 0.15) +
+   labs(x = "Low temperature reached (°C)",
+        y = "Probability of being normally colored") +
+   scale_x_reverse() +
+   coord_cartesian(ylim = c(0, 1)) +
+   theme(axis.text = element_text(size = 12, color = "black"),
+         axis.title = element_text(size = 12, color = "black")) 
+```
+
+
+ggplot() +
+   geom_jitter(data = scp_llt_dat, 
+               aes(x = temp_pulled_grouped,
+                   y = discolor_3day),
+               width = 0.09,
+               height = 0.02,
+               colour = "black",
+               shape = 1,
+               alpha = 0.7) +
+   geom_point(data = scp_summary,
+              aes(x = temp_pulled_grouped, y = mean_discolor_3day),
+              size = 2) +
+   geom_errorbar(data = scp_summary,
+                 aes(x = temp_pulled_grouped, 
+                     ymin = mean_discolor_3day - se_discolor,
+                     ymax = mean_discolor_3day + se_discolor),
+                 width = 0.5) +
+   geom_line(data = pred_dat_discolor,
+             aes(x = x,
+                 y = predicted),
+             size = 1.05) +
+   geom_ribbon(data = pred_dat_discolor,
+               aes(x = x,
+                   ymin = conf.low,
+                   ymax = conf.high),
+               inherit.aes = FALSE,
+               alpha = 0.15) +
+   labs(x = "Low temperature reached (°C)",
+        y = "Probability of being normally colored") +
+   scale_x_reverse() +
+   coord_cartesian(ylim = c(0, 1)) +
+   theme(axis.text = element_text(size = 12, color = "black"),
+         axis.title = element_text(size = 12, color = "black")) 
+         
+pred_dat_eclose <- ggpredict(field_model_eclose, "temp_pulled_grouped")
+ggplot(abbott_scp, aes(x = temp_pulled, y = abbott0_eclose)) +
+   geom_point() +
+      geom_errorbar(aes(x = temp_pulled,
+                     ymin = lwr_0_eclose,
+                     ymax = upr_0_eclose)) +
+   labs(x = "Minimum temp pulled C", y = "Proportion eclosing (Abbott corrected)") +
+   geom_line(data = scp_preds_df, aes(x = est_scp, y = fit), colour = "blue") +
+   geom_ribbon(data = scp_preds_df,
+               aes(x = est_scp, ymin = lwr, ymax = upr),
+               alpha = 0.2,
+               fill = "blue",
+               color = NA,
+               inherit.aes = FALSE)  +
+   geom_line(data = a_eclose_df, aes(x = temp_pulled, y = fit), colour = "black") +
+   geom_ribbon(data = a_eclose_df,
+             aes(x = temp_pulled, ymin = lwr, ymax = upr), 
+             alpha = 0.4, fill = "grey",
+             inherit.aes = FALSE) +
+   scale_x_reverse()
+(a_eclosion_p <- ggplot() +
+   geom_line(data = pred_dat_eclose,
+             aes(x = x,
+                 y = predicted),
+             size = 1.05) +
+   geom_point(data = scp_summary,
+              aes(x = temp_pulled_grouped, y = mean_eclose),
+              size = 2) +
+   geom_errorbar(data = scp_summary,
+                 aes(x = temp_pulled_grouped, 
+                     ymin = mean_eclose - se_eclose,
+                     ymax = mean_eclose + se_eclose),
+                 width = 0.5) +
+   geom_ribbon(data = pred_dat_eclose,
+               aes(x = x,
+                   ymin = conf.low,
+                   ymax = conf.high),
+               inherit.aes = FALSE,
+               alpha = 0.15) +
+   geom_line(data = scp_preds_df, aes(x = est_scp, y = fit), colour = "blue") +
+   geom_ribbon(data = scp_preds_df,
+               aes(x = est_scp, ymin = lwr, ymax = upr),
+               alpha = 0.2,
+               fill = "blue",
+               color = NA,
+               inherit.aes = FALSE)  +
+   labs(x = "Low temperature reached (°C)",
+        y = "Probability of eclosing") +
+   scale_x_reverse() +
+   coord_cartesian(ylim = c(0, 1)) +
+   theme(axis.text = element_text(size = 12, color = "black"),
+         axis.title = element_text(size = 12, color = "black"))
+)
+
+
+
+  minus.logL.s<-function(n, size, prob){
+     sum(dbinom(n, size, prob, log=TRUE))
+  }
+
+L_scp_model  <- minus.logL.s(n = round(abbott_scp$abbott0_eclose * abbott_scp$n),
+             size = abbott_scp$n,
+             prob = predict(scp_logreg,
+                            type = "response",
+                            newdata = data.frame(est_scp = abbott_scp$temp_pulled)
+             ))
+
+L_eclose_model <- minus.logL.s(n = round(abbott_scp$abbott0_eclose * abbott_scp$n),
+             size = abbott_scp$n,
+             prob = predict(a_lab_eclose,
+                            type = "response"
+             ))
+
+# Calculate AIC ( the -2 * L is the Deviance)
+4 - 2 * L_scp_model
+4 - 2 * L_eclose_model
+
+
+
+
+
+   geom_errorbar(data = test3, # data summary
+              aes(x = min_temp,
+                  ymin = fit_prop_eclose - 1.96 * se_fit_prop,
+                  ymax = fit_prop_eclose + 1.96 * se_fit_prop),
+              color = "black",
+              width = 0.5) +
+   geom_point(data = test3,
+              aes(x = min_temp,
+                  y = fit_prop_eclose),
+              color = "black",
+              size = 2) +
+
+
+
+
+Of larvae that reached the point of supercooling, `r sum(scp_llt_dat$est_scp < -18 & scp_llt_dat$discolor_3day == 1, na.rm = TRUE)` were not discolored after three days and `r sum(scp_llt_dat$est_scp < -18 & scp_llt_dat$eclose == 1, na.rm = TRUE)` eclosed.
+
+# Eclosion and emergence model results
+($\beta_{eclosion} = $ `r tidy_mintemp_eclose$estimate[2]` [`r tidy_mintemp_eclose$conf.low[2]`, `r tidy_mintemp_eclose$conf.high[2]`], $beta_{emergence} = $ `r tidy_mintemp_emerge$estimate[2]`, [`r tidy_mintemp_emerge$conf.low[2]`, `r tidy_mintemp_emerge$conf.high[2]`])
+
+
+The cold hardiness strategies used by insects may be divided into four categories: chill intolerant, chill tolerant, freeze intolerant, and freeze tolerant [@andreadis2017]. Two metrics often used in delineating these categories are the supercooling point (SCP), or the point at which water inside the insect body freezes, and the lower lethal temperature, the minimum temperature an insect can reach and still survive [@salt1961;\@Bale1996]. Chill intolerant species have little to no ability to supercool and will exhibit high mortality after exposure to temperatures above their SCP. Both chill tolerant and freezing intolerant species exhibit extensive supercooling below 0 DEGREE_SYMBOLC but chill tolerant species will often die before reaching their SCP, while freeze intolerant species will have little mortality before their SCP. Finally, freeze tolerant species may supercool to some extent but they will control freezing and attempt to limit it to extracellular spaces through the use of ice nucelating agents. Because of this controlled freezing, freeze tolerant insects will begin to exhibit mortality at temperatures below their SCP.
+
+Even though winters are becoming warmer, the frequency of extreme cold events due to climate change may continue to negatively impact populations. 
+
+and emergence ($\chi^2_3$ = `r treatment2_emerge_anova$Chisq`, $p$ = 0.05)
+
+
+```{r map-mild-winter, include=TRUE, fig.cap="Mild winter map"}
+ggplot() +
+   geom_tile(data = win_mild_long, aes(x = x, y = y, fill = predictions)) +
+   theme_nothing(legend = TRUE) +
+   coord_fixed(ratio = 1.3) +
+   scale_fill_viridis(
+      direction = -1,
+      limits = c(0.0, 1.0),
+      name = expression(atop(
+         paste("Percent ", italic("S. galinae ")), "eclosing 2017 - 2018"
+      ))
+   ) +
+   geom_polygon(
+      data = usa,
+      aes(x = long, y = lat, group = group),
+      fill = "transparent",
+      color = "black"
+   ) +
+   theme(
+      legend.title.align = 0,
+      legend.position = c(0.9, 0.3),
+      axis.line = element_blank()
+   ) +
+   facet_wrap(~ pred_type, ncol = 3)
+
+```
+
+\pagebreak
+
+```{r map-severe-winter, include=TRUE, fig.cap = "Severe winter map"}
+ggplot() +
+   geom_tile(data = win_severe_long, aes(x = x, y = y, fill = predictions)) +
+   theme_nothing(legend = TRUE) +
+   coord_fixed(ratio = 1.3) +
+   scale_fill_viridis(
+      direction = -1,
+      limits = c(0.0, 1.0),
+      name = expression(atop(
+         paste("Percent ", italic("S. galinae ")), "eclosing 2013 - 2014"
+      ))
+   ) +
+   geom_polygon(
+      data = usa,
+      aes(x = long, y = lat, group = group),
+      fill = "transparent",
+      color = "black"
+   ) +
+   theme(
+      legend.title.align = 0,
+      #legend.position = c(0.9, 0.3),
+      axis.line = element_blank()
+   ) +
+   facet_wrap(~ pred_type, ncol = 3)
+
+```
